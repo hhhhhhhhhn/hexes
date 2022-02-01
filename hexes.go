@@ -2,6 +2,7 @@ package hexes
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -20,25 +21,28 @@ type Renderer struct {
 	CursorCol        int
 	CurrentAttribute string
 	DefaultAttribute string
+	Out              io.Writer
+	In               io.Reader
+	onEnd            func(*Renderer)
 }
 
-func New() *Renderer {
-	return &Renderer{DefaultAttribute: NORMAL}
+func New(in io.Reader, out io.Writer) *Renderer {
+	return &Renderer{DefaultAttribute: NORMAL, Out: out, In: in}
 }
 
-func commandWithStdin(name string, arg ...string) *exec.Cmd {
+func (r *Renderer) commandWithStdin(name string, arg ...string) *exec.Cmd {
 	command := exec.Command(name, arg...)
-	command.Stdin = os.Stdin
+	command.Stdin = r.In
 	return command
 }
 
 func (r *Renderer) Start() {
-	command := commandWithStdin("stty", "-icanon", "-echo")
-	command.Stdout = os.Stdout
+	command := r.commandWithStdin("stty", "-icanon", "-echo")
+	command.Stdout = r.Out
 	command.Run()
 
-	command = commandWithStdin("tput", "rmam", "civis")
-	command.Stdout = os.Stdout
+	command = r.commandWithStdin("tput", "rmam", "civis")
+	command.Stdout = r.Out
 	command.Run()
 
 	r.updateRowsAndCols()
@@ -61,8 +65,8 @@ func (r *Renderer) Start() {
 }
 
 func (r *Renderer) updateRowsAndCols() {
-	rows, _ := commandWithStdin("tput", "lines").Output()
-	cols, _ := commandWithStdin("tput", "cols").Output()
+	rows, _ := r.commandWithStdin("tput", "lines").Output()
+	cols, _ := r.commandWithStdin("tput", "cols").Output()
 	r.Rows, _ = strconv.Atoi(string(rows[:len(rows)-1]))
 	r.Cols, _ = strconv.Atoi(string(cols[:len(cols) - 1]))
 }
@@ -104,16 +108,20 @@ func (r *Renderer) resizeLinesAndAttributes() {
 	}
 }
 
+func (r *Renderer) print(str string) {
+	r.Out.Write([]byte(str))
+}
+
 // Turn into refresh
 func (r *Renderer) Refresh() {
 	r.updateRowsAndCols()
 	r.resizeLinesAndAttributes()
 	r.SetAttribute(r.DefaultAttribute)
 
-	fmt.Print("\033[H") // Move to top left corner
+	r.print("\033[H") // Move to top left corner
 	r.CursorCol = 0
 	r.CursorRow = 0
-	fmt.Print("\033[J") // Clear to end of screen
+	r.print("\033[J") // Clear to end of screen
 
 	r.redraw()
 }
@@ -122,8 +130,8 @@ func (r *Renderer) redraw() {
 	for row := 0; row < r.Rows; row++ {
 		for col := 0; col < r.Cols; col++ {
 			r.MoveCursor(row, col)
-			fmt.Print(r.Attributes[row][col])
-			fmt.Print(r.Lines[row][col])
+			r.print(r.Attributes[row][col])
+			r.print(r.Lines[row][col])
 			r.CursorCol++
 		}
 	}
@@ -137,7 +145,7 @@ func (r *Renderer) MoveCursor(row, col int) {
 	}
 	r.CursorRow = row
 	r.CursorCol = col
-	fmt.Printf("\033[%v;%vH", row + 1, col + 1)
+	r.print(fmt.Sprintf("\033[%v;%vH", row + 1, col + 1))
 }
 
 func (r *Renderer) setupSignals() {
@@ -146,7 +154,6 @@ func (r *Renderer) setupSignals() {
 	go func() {
 		<-c
 		r.End()
-		fmt.Fprintln(os.Stderr, "exiting")
 		os.Exit(0)
 	}()
 
@@ -185,17 +192,21 @@ func (r *Renderer) setupSignals() {
 }
 
 func (r *Renderer) End() {
-	command := commandWithStdin("stty", "sane")
-	command.Stdout = os.Stdout
+	command := r.commandWithStdin("stty", "sane")
+	command.Stdout = r.Out
 	command.Run()
 
-	command = commandWithStdin("tput", "smam", "cnorm")
-	command.Stdout = os.Stdout
+	command = r.commandWithStdin("tput", "smam", "cnorm")
+	command.Stdout = r.Out
 	command.Run()
 
-	fmt.Print(NORMAL)
-	fmt.Print("\033[H") // Move to top left corner
-	fmt.Print("\033[J") // Clear to end of line
+	r.print(NORMAL)
+	r.print("\033[H") // Move to top left corner
+	r.print("\033[J") // Clear to end of line
+
+	if (r.onEnd != nil)  {
+		r.onEnd(r)
+	}
 }
 
 func (r *Renderer) Set(row, col int, value string) {
@@ -205,7 +216,7 @@ func (r *Renderer) Set(row, col int, value string) {
 	r.MoveCursor(row, col)
 	r.Lines[row][col] = value
 	r.Attributes[row][col] = r.CurrentAttribute
-	fmt.Print(value)
+	r.print(value)
 	r.CursorCol++
 }
 
@@ -224,9 +235,13 @@ func (r *Renderer) SetAttribute(attribute string) {
 	} else {
 		r.CurrentAttribute = r.DefaultAttribute + attribute
 	}
-	fmt.Print(r.CurrentAttribute)
+	r.print(r.CurrentAttribute)
 }
 
 func (r *Renderer) SetDefaultAttribute(attribute string) {
 	r.DefaultAttribute = attribute
+}
+
+func (r *Renderer) OnEnd(f func(r *Renderer)) {
+	r.onEnd = f
 }

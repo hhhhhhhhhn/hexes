@@ -11,13 +11,14 @@ import (
 	"time"
 	"fmt"
 	"unicode"
+	"os"
 
 	"github.com/hhhhhhhhhn/hexes"
 )
 
 func main() {
 	duration := 2 * time.Millisecond
-	r := hexes.New()
+	r := hexes.New(os.Stdin, os.Stdout)
 	r.SetDefaultAttribute(hexes.NORMAL + hexes.BG_WHITE + hexes.GREEN)
 	r.Start()
 
