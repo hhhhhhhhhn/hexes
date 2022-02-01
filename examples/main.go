@@ -3,6 +3,7 @@ package main
 import (
 	"time"
 	"fmt"
+	"unicode"
 
 	"github.com/hhhhhhhhhn/hexes"
 )
@@ -14,10 +15,13 @@ func main() {
 	r.Start()
 
 	for i := 0; i < 10000; i++ {
+		for !unicode.IsGraphic(rune(i)) {
+			i++
+		}
 		row := i % r.Rows
 		col := (i * 4) % r.Cols
 
-		r.SetString(row, col, fmt.Sprint(i, i, i))
+		r.SetString(row, col, fmt.Sprint(string(rune(i))))
 		time.Sleep(duration)
 
 		if i % 1000 == 0 {

@@ -7,6 +7,8 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+
+	"golang.org/x/text/width"
 )
 
 type Renderer struct {
@@ -236,6 +238,7 @@ func (r *Renderer) Set(row, col int, value string) {
 }
 
 func (r *Renderer) SetString(row, col int, value string) {
+	value = width.Narrow.String(value)
 	chrIndex := 0
 	for _, chr := range value {
 		r.Set(row, col + chrIndex, string(chr))
