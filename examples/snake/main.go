@@ -8,7 +8,6 @@ import (
 
 	"github.com/hhhhhhhhhn/hexes"
 )
-
 type cell int
 const (
 	EMPTY cell = iota
@@ -29,6 +28,7 @@ var grid       [][]cell
 var out        *bufio.Writer
 var snake      [][]int
 var snakeDir   direction
+var wantedDir  direction
 var difficulty int = 20
 
 func main() {
@@ -42,6 +42,7 @@ func main() {
 
 	grid[2][3] = FRUIT
 	snakeDir = LEFT
+	wantedDir = LEFT
 
 	snake = [][]int{{0, 0}, {0, 1}, {0, 2}}
 
@@ -56,7 +57,7 @@ func main() {
 
 func changeDir(dir direction) {
 	if snakeDir != -dir {
-		snakeDir = dir
+		wantedDir = dir
 	}
 }
 
@@ -102,6 +103,7 @@ func mod(a, b int) int {
 }
 
 func moveSnake() {
+	snakeDir = wantedDir
 	grid[snake[0][0]][snake[0][1]] = EMPTY
 	head := snake[len(snake)-1]
 
@@ -164,7 +166,7 @@ func renderGrid() {
 				renderer.SetString(y, x*2, "  ")
 				break
 			case FRUIT:
-				renderer.SetAttribute(hexes.RED)
+				renderer.SetAttribute(hexes.BOLD + hexes.RED)
 				renderer.SetString(y, x*2, "()")
 				break
 			}
