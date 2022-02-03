@@ -223,7 +223,7 @@ func (r *Renderer) Set(row, col int, value string) {
 func (r *Renderer) SetString(row, col int, value string) {
 	for _, chr := range value {
 		r.Set(row, col, string(chr))
-		col = r.CursorCol
+		col += runeWidth.RuneWidth(chr)
 	}
 }
 

@@ -2,7 +2,7 @@
 
 A simple curses alternative written in go.
 For now, it requires `stty` and `tput` to work.
-Test the [example](./examples/main.go)!
+Test the [examples](./examples/)!
 
 ```go
 package main
