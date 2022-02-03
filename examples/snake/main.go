@@ -44,7 +44,7 @@ func main() {
 	snakeDir = LEFT
 	wantedDir = LEFT
 
-	snake = [][]int{{0, 0}, {0, 1}, {0, 2}}
+	snake = [][]int{{renderer.Rows/2, renderer.Cols/4}, {renderer.Rows/2, renderer.Cols/4 + 1}, {renderer.Rows/2 + 2, renderer.Cols/4}}
 
 	go handleInput()
 
