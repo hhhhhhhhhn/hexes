@@ -4,6 +4,10 @@ A simple curses alternative written in go.
 For now, it requires `stty` and `tput` to work.
 Test the [examples](./examples/)!
 
+![Snake in hexes](./examples/snake/screengrab.gif)
+
+## Usage
+
 ```go
 package main
 
