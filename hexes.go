@@ -223,7 +223,8 @@ func (r *Renderer) Set(row, col int, value string) {
 
 	if width < oldWidth && col < r.Cols - 1 {
 		r.MoveCursor(row, col+1)
-		r.print(r.Lines[row][col])
+		r.SetAttribute(r.Attributes[row][col+1])
+		r.print(r.Lines[row][col+1])
 	}
 }
 
