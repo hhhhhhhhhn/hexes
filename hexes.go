@@ -213,6 +213,7 @@ func (r *Renderer) Set(row, col int, value string) {
 	if (row > r.Rows - 1 || col > r.Cols - 1 || (r.Lines[row][col] == value && r.Attributes[row][col] == r.CurrentAttribute)) {
 		return
 	}
+	oldWidth := runeWidth.StringWidth(r.Lines[row][col])
 	width := runeWidth.StringWidth(value)
 	r.MoveCursor(row, col)
 	r.Lines[row][col] = value
@@ -220,8 +221,9 @@ func (r *Renderer) Set(row, col int, value string) {
 	r.print(value)
 	r.CursorCol += width
 
-	if width == 2 {
-		r.Lines[row][col] = ""
+	if width < oldWidth && col < r.Cols - 1 {
+		r.MoveCursor(row, col+1)
+		r.print(r.Lines[row][col])
 	}
 }
 
