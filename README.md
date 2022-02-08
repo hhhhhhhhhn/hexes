@@ -33,7 +33,7 @@ func main() {
 		row := i % r.Rows
 		col := (i * 4) % r.Cols
 
-		r.SetString(row, col, fmt.Sprint(string(rune(i))))
+		r.Set(row, col, string(rune(i)))
 		time.Sleep(duration)
 
 		if i % 1000 == 0 {

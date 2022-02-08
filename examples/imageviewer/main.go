@@ -41,24 +41,7 @@ func main() {
 	lastMouseY := 0
 	dragging := false
 
-	for {
-		for y := 0; y < renderer.Rows; y++ {
-			for x := 0; x < renderer.Cols; x++ {
-				imageX := ((x - renderer.Cols / 2) * imageHeight * 2 * scale / renderer.Cols / 1000 + xOffset / 100)
-				imageY := ((y - renderer.Rows / 2) * imageHeight * scale / renderer.Rows / 1000 + yOffset / 100)
-
-				//imageX := (x * imageHeight * 2 * scale / renderer.Cols / 1000 + xOffset)
-				//imageY := (y * imageHeight * scale / renderer.Rows / 1000 + yOffset)
-
-				r, g, b, _ := img.At(imageX, imageY).RGBA()
-				r /= 256; g /= 256; b /= 256
-
-				renderer.SetAttribute(hexes.TrueColorBg(int(r), int(g), int(b)))
-				renderer.Set(y, x, " ")
-			}
-		}
-		out.Flush()
-
+	go func() {
 		for {
 			event := listener.GetEvent()
 			switch(event.EventType) {
@@ -86,14 +69,25 @@ func main() {
 					yOffset += (lastMouseY - event.Y) * imageHeight * scale * 100 / renderer.Rows / 1000
 					lastMouseX = event.X
 					lastMouseY = event.Y
-				} else {
-					continue
 				}
-			default:
-				continue
 			}
-			break
 		}
+	}()
+
+	for {
+		for y := 0; y < renderer.Rows; y++ {
+			for x := 0; x < renderer.Cols; x++ {
+				imageX := ((x - renderer.Cols / 2) * imageHeight * 2 * scale / renderer.Cols / 1000 + xOffset / 100)
+				imageY := ((y - renderer.Rows / 2) * imageHeight * scale / renderer.Rows / 1000 + yOffset / 100)
+
+				r, g, b, _ := img.At(imageX, imageY).RGBA()
+				r /= 256; g /= 256; b /= 256
+
+				renderer.SetAttribute(hexes.TrueColorBg(int(r), int(g), int(b)))
+				renderer.Set(y, x, " ")
+			}
+		}
+		out.Flush()
 	}
 }
 
