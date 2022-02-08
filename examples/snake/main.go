@@ -28,7 +28,7 @@ var grid       [][]cell
 var out        *bufio.Writer
 var snake      [][]int
 var snakeDir   direction
-var wantedDir  direction
+var wantedDir  []direction // A queue
 var difficulty int = 20
 
 func main() {
@@ -42,7 +42,7 @@ func main() {
 
 	grid[2][3] = FRUIT
 	snakeDir = LEFT
-	wantedDir = LEFT
+	wantedDir = []direction{LEFT}
 
 	snake = [][]int{{renderer.Rows/2, renderer.Cols/4}, {renderer.Rows/2, renderer.Cols/4 + 1}, {renderer.Rows/2 + 2, renderer.Cols/4}}
 
@@ -56,9 +56,14 @@ func main() {
 }
 
 func changeDir(dir direction) {
-	if snakeDir != -dir {
-		wantedDir = dir
+	if len(wantedDir) > 0 {
+		if wantedDir[len(wantedDir) - 1] == -dir {
+			return
+		}
+	} else if snakeDir == -dir {
+		return
 	}
+	wantedDir = append(wantedDir, dir)
 }
 
 func handleInput() {
@@ -103,7 +108,10 @@ func mod(a, b int) int {
 }
 
 func moveSnake() {
-	snakeDir = wantedDir
+	if len(wantedDir) > 0 {
+		snakeDir = wantedDir[0]
+		wantedDir = wantedDir[1:]
+	}
 	grid[snake[0][0]][snake[0][1]] = EMPTY
 	head := snake[len(snake)-1]
 
