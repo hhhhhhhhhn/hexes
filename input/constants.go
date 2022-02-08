@@ -1,4 +1,4 @@
-package listener
+package input
 
 const (
 	ESCAPE        rune = 27

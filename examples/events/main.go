@@ -8,28 +8,28 @@ import (
 	"unicode"
 
 	"github.com/hhhhhhhhhn/hexes"
-	"github.com/hhhhhhhhhn/hexes/listener"
+	"github.com/hhhhhhhhhn/hexes/input"
 )
 
 func main() {
 	out := bufio.NewWriterSize(os.Stdin, 4096)
 	renderer := hexes.New(os.Stdin, out)
 
-	eventListener := listener.New(os.Stdin)
-	eventListener.EnableMouseTracking(out)
+	listener := input.New(os.Stdin)
+	listener.EnableMouseTracking(out)
 	out.Flush()
 
 	renderer.Start()
 	renderer.OnEnd(func(*hexes.Renderer){
-		eventListener.DisableMouseTracking(out)
+		listener.DisableMouseTracking(out)
 		out.Flush()
 	})
 
 
 	for {
-		event := eventListener.GetEvent()
+		event := listener.GetEvent()
 		switch(event.EventType) {
-		case listener.KeyPressed:
+		case input.KeyPressed:
 			if unicode.IsGraphic(event.Chr) {
 				printLine(renderer, "Key Pressed: " + string(event.Chr))
 			} else {
@@ -41,39 +41,39 @@ func main() {
 				return
 			}
 			break
-		case listener.MouseMove:
+		case input.MouseMove:
 			printLine(renderer, "Mouse Move: " + fmt.Sprint(event.X, event.Y))
 			out.Flush()
 			break
-		case listener.MouseLeftClick:
+		case input.MouseLeftClick:
 			printLine(renderer, "Mouse Left Click: " + fmt.Sprint(event.X, event.Y))
 			out.Flush()
 			break
-		case listener.MouseLeftRelease:
+		case input.MouseLeftRelease:
 			printLine(renderer, "Mouse Left Release: " + fmt.Sprint(event.X, event.Y))
 			out.Flush()
 			break
-		case listener.MouseMiddleClick:
+		case input.MouseMiddleClick:
 			printLine(renderer, "Mouse Middle Click: " + fmt.Sprint(event.X, event.Y))
 			out.Flush()
 			break
-		case listener.MouseMiddleRelease:
+		case input.MouseMiddleRelease:
 			printLine(renderer, "Mouse Middle Release: " + fmt.Sprint(event.X, event.Y))
 			out.Flush()
 			break
-		case listener.MouseRightClick:
+		case input.MouseRightClick:
 			printLine(renderer, "Mouse Right Click: " + fmt.Sprint(event.X, event.Y))
 			out.Flush()
 			break
-		case listener.MouseRightRelease:
+		case input.MouseRightRelease:
 			printLine(renderer, "Mouse Right Release: " + fmt.Sprint(event.X, event.Y))
 			out.Flush()
 			break
-		case listener.ScrollDown:
+		case input.ScrollDown:
 			printLine(renderer, "Scroll Down: " + fmt.Sprint(event.X, event.Y))
 			out.Flush()
 			break
-		case listener.ScrollUp:
+		case input.ScrollUp:
 			printLine(renderer, "Scroll Up: " + fmt.Sprint(event.X, event.Y))
 			out.Flush()
 			break

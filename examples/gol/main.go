@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/hhhhhhhhhn/hexes"
-	"github.com/hhhhhhhhhn/hexes/listener"
+	"github.com/hhhhhhhhhn/hexes/input"
 )
 type cell bool
 const (
@@ -15,7 +15,7 @@ const (
 )
 
 var renderer   *hexes.Renderer
-var evListener *listener.Listener
+var listener   *input.Listener
 var grid       [][]cell
 var out        *bufio.Writer
 var lastSpeed  time.Duration = 5
@@ -26,19 +26,17 @@ var mouseY     int
 
 func main() {
 	out = bufio.NewWriterSize(os.Stdin, 4096)
-	os.Stdout.WriteString("\033[?1003;1006;1015h")
 	renderer = hexes.New(os.Stdin, out)
 	renderer.Start()
 
-	evListener = listener.New(os.Stdin)
-	evListener.EnableMouseTracking(out)
+	listener = input.New(os.Stdin)
+	listener.EnableMouseTracking(out)
 
 	out.Flush()
 
 	renderer.OnEnd(func(*hexes.Renderer){
-		evListener.DisableMouseTracking(out)
+		listener.DisableMouseTracking(out)
 		out.Flush()
-		os.Stdout.WriteString("\033[?1003;1006;1015l")
 	})
 	grid = createGrid(renderer.Rows, renderer.Cols / 2)
 
@@ -57,9 +55,9 @@ func main() {
 
 func handleInput() {
 	for {
-		event := evListener.GetEvent()
+		event := listener.GetEvent()
 		switch event.EventType {
-		case listener.KeyPressed:
+		case input.KeyPressed:
 			switch event.Chr {
 			case '+':
 				speed++
@@ -79,7 +77,7 @@ func handleInput() {
 				renderer.End()
 				os.Exit(0)
 			}
-		case listener.MouseMove:
+		case input.MouseMove:
 			x := event.X
 			y := event.Y
 			mouseX = x / 2
@@ -88,7 +86,7 @@ func handleInput() {
 				grid[mouseY][mouseX] = ALIVE
 			}
 			break
-		case listener.MouseLeftClick:
+		case input.MouseLeftClick:
 			x := event.X
 			y := event.Y
 			mouseX = x / 2
@@ -96,7 +94,7 @@ func handleInput() {
 			mouseDown = true
 			grid[mouseY][mouseX] = !grid[mouseY][mouseX]
 			break
-		case listener.MouseLeftRelease:
+		case input.MouseLeftRelease:
 			x := event.X
 			y := event.Y
 			mouseX = x / 2

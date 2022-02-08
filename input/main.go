@@ -1,4 +1,4 @@
-package listener
+package input
 
 import (
 	"bufio"
