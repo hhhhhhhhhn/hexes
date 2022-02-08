@@ -11,7 +11,6 @@ import (
 	"github.com/hhhhhhhhhn/hexes"
 	"github.com/hhhhhhhhhn/hexes/input"
 )
-
 func main() {
 	img, err := loadImage()
 	if err != nil {
@@ -19,7 +18,7 @@ func main() {
 	}
 	bounds := img.Bounds()
 
-	out := bufio.NewWriterSize(os.Stdout, 4096)
+	out := bufio.NewWriterSize(os.Stdout, 500000)
 
 	listener := input.New(os.Stdin)
 	listener.EnableMouseTracking(out)
@@ -55,7 +54,7 @@ func main() {
 				r /= 256; g /= 256; b /= 256
 
 				renderer.SetAttribute(hexes.TrueColorBg(int(r), int(g), int(b)))
-				renderer.SetString(y, x, " ")
+				renderer.Set(y, x, " ")
 			}
 		}
 		out.Flush()

@@ -214,9 +214,9 @@ func (r *Renderer) Set(row, col int, value string) {
 		return
 	}
 	var oldWidth int
-	width := runeWidth.StringWidth(value)
+	width := runeWidth.RuneWidth([]rune(value)[0])
 	if width == 2 {
-		oldWidth = runeWidth.StringWidth(r.Lines[row][col])
+		oldWidth = runeWidth.RuneWidth([]rune(r.Lines[row][col])[0])
 	}
 
 	r.MoveCursor(row, col)

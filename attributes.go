@@ -1,6 +1,8 @@
 package hexes
 
-import "fmt"
+import (
+	"strconv"
+)
 
 const (
 	NORMAL     = "\033[0m"
@@ -33,9 +35,11 @@ const (
 )
 
 func TrueColor(red, green, blue int) string {
-	return fmt.Sprintf("\033[38;2;%v;%v;%vm", red, green, blue)
+	return "\033[38;2;" + strconv.Itoa(red) + ";" + strconv.Itoa(green) + ";" + strconv.Itoa(blue) + "m"
+	// return fmt.Sprintf("\033[38;2;%v;%v;%vm", red, green, blue) // This version is way slower
 }
 
 func TrueColorBg(red, green, blue int) string {
-	return fmt.Sprintf("\033[48;2;%v;%v;%vm", red, green, blue)
+	return "\033[48;2;" + strconv.Itoa(red) + ";" + strconv.Itoa(green) + ";" + strconv.Itoa(blue) + "m"
+	// return fmt.Sprintf("\033[48;2;%v;%v;%vm", red, green, blue)
 }
