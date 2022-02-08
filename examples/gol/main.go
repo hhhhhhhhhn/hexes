@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"os"
 	"time"
-	"strconv"
 
 	"github.com/hhhhhhhhhn/hexes"
+	"github.com/hhhhhhhhhn/hexes/listener"
 )
 type cell bool
 const (
@@ -15,6 +15,7 @@ const (
 )
 
 var renderer   *hexes.Renderer
+var evListener *listener.Listener
 var grid       [][]cell
 var out        *bufio.Writer
 var lastSpeed  time.Duration = 5
@@ -28,7 +29,14 @@ func main() {
 	os.Stdout.WriteString("\033[?1003;1006;1015h")
 	renderer = hexes.New(os.Stdin, out)
 	renderer.Start()
+
+	evListener = listener.New(os.Stdin)
+	evListener.EnableMouseTracking(out)
+
+	out.Flush()
+
 	renderer.OnEnd(func(*hexes.Renderer){
+		evListener.DisableMouseTracking(out)
 		out.Flush()
 		os.Stdout.WriteString("\033[?1003;1006;1015l")
 	})
@@ -48,97 +56,54 @@ func main() {
 }
 
 func handleInput() {
-	in := bufio.NewReader(os.Stdin)
 	for {
-		chr, _, _ := in.ReadRune()
-		switch(chr) {
-		case 27:
-			sequence := readEscapeSequence(in)
-			parsedSequence := parseEscapeSequence(sequence)
-			if parsedSequence[0] == "[<" {
-				if parsedSequence[1] == "32" {
-					mouseX, _ = strconv.Atoi(parsedSequence[3])
-					if mouseX > 0 {
-						mouseX--
-					}
-					mouseX /= 2
-					mouseY, _ = strconv.Atoi(parsedSequence[5])
-					mouseY--
-
-					if mouseDown {
-						grid[mouseY][mouseX] = !grid[mouseY][mouseX]
-					}
+		event := evListener.GetEvent()
+		switch event.EventType {
+		case listener.KeyPressed:
+			switch event.Chr {
+			case '+':
+				speed++
+				lastSpeed++
+			case '-':
+				if speed > 1 {
+					speed--
+					lastSpeed--
 				}
-				if parsedSequence[1] == "0" {
-					mouseX, _ = strconv.Atoi(parsedSequence[3])
-					if mouseX > 0 {
-						mouseX--
-					}
-					mouseX /= 2
-					mouseY, _ = strconv.Atoi(parsedSequence[5])
-					mouseY--
-					if parsedSequence[6] == "M" {
-						mouseDown = true
-					} else {
-						mouseDown = false
-					}
-
-					if mouseDown {
-						grid[mouseY][mouseX] = !grid[mouseY][mouseX]
-					}
+			case ' ':
+				if speed == 0 {
+					speed = lastSpeed
+				} else {
+					speed = 0
 				}
+			case 'q':
+				renderer.End()
+				os.Exit(0)
+			}
+		case listener.MouseMove:
+			x := event.X
+			y := event.Y
+			mouseX = x / 2
+			mouseY = y
+			if mouseDown {
+				grid[mouseY][mouseX] = ALIVE
 			}
 			break
-		case '+':
-			speed++
-			lastSpeed++
-		case '-':
-			if speed > 1 {
-				speed--
-				lastSpeed--
-			}
-		case ' ':
-			if speed == 0 {
-				speed = lastSpeed
-			} else {
-				speed = 0
-			}
-		case 'q':
-			renderer.End()
-			os.Exit(0)
-		default:
+		case listener.MouseLeftClick:
+			x := event.X
+			y := event.Y
+			mouseX = x / 2
+			mouseY = y
+			mouseDown = true
+			grid[mouseY][mouseX] = !grid[mouseY][mouseX]
+			break
+		case listener.MouseLeftRelease:
+			x := event.X
+			y := event.Y
+			mouseX = x / 2
+			mouseY = y
+			mouseDown = false
 			break
 		}
-	}
-}
-
-func parseEscapeSequence(escape string) (parsed []string) {
-	inDigit := true
-	for _, chr := range escape {
-		if inDigit != isDigit(chr) {
-			parsed = append(parsed, "")
-			inDigit = !inDigit
-		}
-		parsed[len(parsed) - 1] += string(chr)
-	}
-	return parsed
-}
-
-func isDigit(chr rune) bool {
-	return (chr >= '0' && chr <= '9')
-}
-
-func readEscapeSequence(in *bufio.Reader) (sequence string) {
-	sequence = ""
-	escapeStart := time.Now()
-	for {
-		chr, _, _ := in.ReadRune()
-		currentTime := time.Now()
-		if currentTime.Sub(escapeStart) > time.Millisecond * 20 {
-			in.UnreadRune()
-			return sequence
-		}
-		sequence += string(chr)
 	}
 }
 
