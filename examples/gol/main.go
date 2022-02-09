@@ -80,8 +80,13 @@ func handleInput() {
 		case input.MouseMove:
 			x := event.X
 			y := event.Y
-			mouseX = x / 2
+
+			mouseX = (x-1) / 2
 			mouseY = y
+			if mouseY == len(grid) {
+				mouseY--
+			}
+
 			if mouseDown {
 				grid[mouseY][mouseX] = ALIVE
 			}
@@ -89,16 +94,25 @@ func handleInput() {
 		case input.MouseLeftClick:
 			x := event.X
 			y := event.Y
-			mouseX = x / 2
+
+			mouseX = (x-1) / 2
 			mouseY = y
+			if mouseY == len(grid) {
+				mouseY--
+			}
 			mouseDown = true
+
 			grid[mouseY][mouseX] = !grid[mouseY][mouseX]
 			break
 		case input.MouseLeftRelease:
 			x := event.X
 			y := event.Y
-			mouseX = x / 2
+
+			mouseX = (x-1) / 2
 			mouseY = y
+			if mouseY == len(grid) {
+				mouseY--
+			}
 			mouseDown = false
 			break
 		}
