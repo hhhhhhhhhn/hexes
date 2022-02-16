@@ -11,6 +11,9 @@ import (
 	"github.com/hhhhhhhhhn/hexes"
 	"github.com/hhhhhhhhhn/hexes/input"
 )
+
+var quit = false
+
 func main() {
 	img, err := loadImage()
 	if err != nil {
@@ -50,19 +53,23 @@ func main() {
 				if scale < 10 {
 					scale--
 				}
+				break
 			case input.ScrollUp:
 				scale = scale * 9 / 10
 				if scale < 10 {
 					scale++
 				}
+				break
 			case input.MouseLeftClick:
 				lastMouseX = event.X
 				lastMouseY = event.Y
 				dragging = true
+				break
 			case input.MouseLeftRelease:
 				lastMouseX = event.X
 				lastMouseY = event.Y
 				dragging = false
+				break
 			case input.MouseMove:
 				if dragging {
 					xOffset += (lastMouseX - event.X) * imageHeight * scale * 2 * 100 / renderer.Cols / 1000
@@ -70,11 +77,19 @@ func main() {
 					lastMouseX = event.X
 					lastMouseY = event.Y
 				}
+				break
+			case input.KeyPressed:
+				quit = true
+				break
 			}
 		}
 	}()
 
 	for {
+		if quit {
+			renderer.End()
+			os.Exit(0)
+		}
 		for y := 0; y < renderer.Rows; y++ {
 			for x := 0; x < renderer.Cols; x++ {
 				imageX := ((x - renderer.Cols / 2) * imageHeight * 2 * scale / renderer.Cols / 1000 + xOffset / 100)

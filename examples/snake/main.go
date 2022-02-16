@@ -57,7 +57,7 @@ func main() {
 
 func changeDir(dir direction) {
 	if len(wantedDir) > 0 {
-		if wantedDir[len(wantedDir) - 1] == -dir {
+		if wantedDir[len(wantedDir) - 1] == -dir || wantedDir[len(wantedDir) - 1] == dir {
 			return
 		}
 	} else if snakeDir == -dir {

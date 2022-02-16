@@ -3,11 +3,8 @@ package hexes
 import (
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
-	"os/signal"
 	"strconv"
-	"syscall"
 
 	runeWidth "github.com/mattn/go-runewidth"
 )
@@ -41,10 +38,11 @@ func (r *Renderer) Start() {
 	command.Stdout = r.Out
 	command.Run()
 
-	command = r.commandWithStdin("tput", "rmam", "civis")
+	command = r.commandWithStdin("tput", "rmam")
 	command.Stdout = r.Out
 	command.Run()
 
+	r.print("\033[?25l") // Hide cursor
 	r.updateRowsAndCols()
 
 	for i := 0; i < r.Rows; i++ {
@@ -61,7 +59,6 @@ func (r *Renderer) Start() {
 	r.CurrentAttribute = r.DefaultAttribute
 
 	r.Refresh()
-	r.setupSignals()
 }
 
 func (r *Renderer) updateRowsAndCols() {
@@ -148,61 +145,19 @@ func (r *Renderer) MoveCursor(row, col int) {
 	r.print(fmt.Sprintf("\033[%v;%vH", row + 1, col + 1))
 }
 
-func (r *Renderer) setupSignals() {
-	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-c
-		r.End()
-		os.Exit(0)
-	}()
-
-	//// This makes sure WINCH signals aren't spammed
-	//refresh := make(chan int)
-	//refreshTimeouts := make(chan int)
-	//go func() {
-	//	latestRefreshId := 0
-	//	for {
-	//		select {
-	//			case id := <- refresh:
-	//				latestRefreshId = id
-	//				go func() {
-	//					time.Sleep(100 * time.Millisecond)
-	//					refreshTimeouts <- id
-	//				}()
-	//			case id := <-refreshTimeouts:
-	//				if id == latestRefreshId {
-	//					r.Refresh()
-	//				}
-	//		}
-	//	}
-	//}()
-
-	//w := make(chan os.Signal)
-	//signal.Notify(w, syscall.SIGWINCH)
-	//go func() {
-	//	refreshId := 0
-	//	for {
-	//		<-w
-	//		refresh <- (refreshId)
-	//		refreshId++
-	//		r.Refresh()
-	//	}
-	//}()
-}
-
 func (r *Renderer) End() {
 	command := r.commandWithStdin("stty", "sane")
 	command.Stdout = r.Out
 	command.Run()
 
-	command = r.commandWithStdin("tput", "smam", "cnorm")
+	command = r.commandWithStdin("tput", "smam")
 	command.Stdout = r.Out
 	command.Run()
 
+	r.print("\033[?25h") // Show cursor
 	r.print(NORMAL)
 	r.print("\033[H") // Move to top left corner
-	r.print("\033[J") // Clear to end of line
+	r.print("\033[J") // Clear to end
 
 	if (r.onEnd != nil)  {
 		r.onEnd(r)

@@ -23,6 +23,7 @@ var speed      time.Duration = 5
 var mouseDown  bool
 var mouseX     int
 var mouseY     int
+var quit       bool          = false
 
 func main() {
 	out = bufio.NewWriterSize(os.Stdin, 4096)
@@ -45,6 +46,11 @@ func main() {
 	lastTime := time.Now()
 
 	for {
+		if quit {
+			renderer.End()
+			os.Exit(0)
+			return
+		}
 		renderGrid()
 		if speed != 0 && (time.Since(lastTime) > time.Second / time.Duration(speed)) {
 			step()
@@ -74,48 +80,37 @@ func handleInput() {
 					speed = 0
 				}
 			case 'q':
-				renderer.End()
-				os.Exit(0)
+				quit = true
 			}
 		case input.MouseMove:
-			x := event.X
-			y := event.Y
-
-			mouseX = (x-1) / 2
-			mouseY = y
-			if mouseY == len(grid) {
-				mouseY--
-			}
+			updateMouse(event.Y, event.X)
 
 			if mouseDown {
 				grid[mouseY][mouseX] = ALIVE
 			}
 			break
 		case input.MouseLeftClick:
-			x := event.X
-			y := event.Y
-
-			mouseX = (x-1) / 2
-			mouseY = y
-			if mouseY == len(grid) {
-				mouseY--
-			}
+			updateMouse(event.Y, event.X)
 			mouseDown = true
 
 			grid[mouseY][mouseX] = !grid[mouseY][mouseX]
 			break
 		case input.MouseLeftRelease:
-			x := event.X
-			y := event.Y
-
-			mouseX = (x-1) / 2
-			mouseY = y
-			if mouseY == len(grid) {
-				mouseY--
-			}
+			updateMouse(event.Y, event.X)
 			mouseDown = false
 			break
 		}
+	}
+}
+
+func updateMouse(row, col int) {
+	mouseX = col / 2
+	if mouseX == len(grid[0]) {
+		mouseX--
+	}
+	mouseY = row
+	if mouseY == len(grid) {
+		mouseY--
 	}
 }
 
