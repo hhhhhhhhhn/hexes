@@ -1,17 +1,18 @@
 package main
 
 import (
-	"time"
-	"unicode"
 	"fmt"
 	"os"
 	"bufio"
+	"runtime/pprof"
 
 	"github.com/hhhhhhhhhn/hexes"
 )
 
 func main() {
-	duration := 1 * time.Millisecond
+	cpuProf, _ := os.Create("cpuprofile")
+	defer cpuProf.Close()
+	pprof.StartCPUProfile(cpuProf)
 
 	out := bufio.NewWriterSize(os.Stdout, 10000)
 
@@ -24,45 +25,6 @@ func main() {
 	r.OnEnd(func (*hexes.Renderer) {
 		out.Flush()
 	})
-
-	for i := 0; i < 10000; i++ {
-		for !unicode.IsGraphic(rune(i)) {
-			i++
-		}
-		row := i % r.Rows
-		col := (i * 4) % r.Cols
-
-		r.SetString(row, col, fmt.Sprint(string(rune(i))))
-		time.Sleep(duration)
-
-		if i % 1000 == 0 {
-			r.SetAttribute(r.DefaultAttribute)
-		}
-		if i % 1000 == 200 {
-			r.SetAttribute(hexes.RED)
-		}
-		if i % 1000 == 400 {
-			r.SetAttribute(hexes.BG_CYAN + hexes.WHITE + hexes.BOLD)
-		}
-		if i % 1000 == 600 {
-			r.SetAttribute(hexes.BG_YELLOW + hexes.RED + hexes.BOLD + hexes.ITALIC)
-		}
-		if i % 1000 == 800 {
-			r.SetAttribute(hexes.REVERSE)
-		}
-
-		out.Flush()
-	}
-
-	for row := 0; row < r.Rows; row++ {
-		for col := 0; col < r.Cols; col++ {
-			r.SetAttribute(
-				hexes.TrueColorBg(row * 255 / r.Rows, col * 255 / r.Cols, 0))
-			r.SetString(row, col, " ")
-		}
-	}
-	out.Flush()
-	time.Sleep(1000 * duration)
 
 	colors := [][]string{}
 	for row := 0; row < r.Rows; row++ {
@@ -83,4 +45,6 @@ func main() {
 		out.Flush()
 	}
 	r.End()
+
+	pprof.StopCPUProfile()
 }
