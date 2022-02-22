@@ -7,12 +7,14 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"os"
+	"time"
 
 	"github.com/hhhhhhhhhn/hexes"
 	"github.com/hhhhhhhhhn/hexes/input"
 )
 
 var quit = false
+var render = true
 
 func main() {
 	img, err := loadImage()
@@ -53,12 +55,14 @@ func main() {
 				if scale < 10 {
 					scale--
 				}
+				render = true
 				break
 			case input.ScrollUp:
 				scale = scale * 9 / 10
 				if scale < 10 {
 					scale++
 				}
+				render = true
 				break
 			case input.MouseLeftClick:
 				lastMouseX = event.X
@@ -76,6 +80,7 @@ func main() {
 					yOffset += (lastMouseY - event.Y) * imageHeight * scale * 100 / renderer.Rows / 1000
 					lastMouseX = event.X
 					lastMouseY = event.Y
+					render = true
 				}
 				break
 			case input.KeyPressed:
@@ -90,19 +95,24 @@ func main() {
 			renderer.End()
 			os.Exit(0)
 		}
-		for y := 0; y < renderer.Rows; y++ {
-			for x := 0; x < renderer.Cols; x++ {
-				imageX := ((x - renderer.Cols / 2) * imageHeight * 2 * scale / renderer.Cols / 1000 + xOffset / 100)
-				imageY := ((y - renderer.Rows / 2) * imageHeight * scale / renderer.Rows / 1000 + yOffset / 100)
+		if render {
+			render = false
+			for y := 0; y < renderer.Rows; y++ {
+				for x := 0; x < renderer.Cols; x++ {
+					imageX := ((x - renderer.Cols / 2) * imageHeight * 2 * scale / renderer.Cols / 1000 + xOffset / 100)
+					imageY := ((y - renderer.Rows / 2) * imageHeight * scale / renderer.Rows / 1000 + yOffset / 100)
 
-				r, g, b, _ := img.At(imageX, imageY).RGBA()
-				r /= 256; g /= 256; b /= 256
+					r, g, b, _ := img.At(imageX, imageY).RGBA()
+					r /= 256; g /= 256; b /= 256
 
-				renderer.SetAttribute(hexes.TrueColorBg(int(r), int(g), int(b)))
-				renderer.Set(y, x, ' ')
+					renderer.SetAttribute(hexes.TrueColorBg(int(r), int(g), int(b)))
+					renderer.Set(y, x, ' ')
+				}
 			}
+			out.Flush()
+		} else {
+			time.Sleep(time.Second / 60)
 		}
-		out.Flush()
 	}
 }
 

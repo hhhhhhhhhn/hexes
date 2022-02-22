@@ -24,6 +24,7 @@ var mouseDown  bool
 var mouseX     int
 var mouseY     int
 var quit       bool          = false
+var render     bool          = true
 
 func main() {
 	out = bufio.NewWriterSize(os.Stdin, 4096)
@@ -51,11 +52,16 @@ func main() {
 			os.Exit(0)
 			return
 		}
-		renderGrid()
+		if render {
+			render = false
+			renderGrid()
+		}
 		if speed != 0 && (time.Since(lastTime) > time.Second / time.Duration(speed)) {
+			render = true
 			step()
 			lastTime = time.Now()
 		}
+		time.Sleep(time.Second / 60)
 	}
 }
 
@@ -87,6 +93,7 @@ func handleInput() {
 
 			if mouseDown {
 				grid[mouseY][mouseX] = ALIVE
+				render = true
 			}
 			break
 		case input.MouseLeftClick:
@@ -94,6 +101,8 @@ func handleInput() {
 			mouseDown = true
 
 			grid[mouseY][mouseX] = !grid[mouseY][mouseX]
+
+			render = true
 			break
 		case input.MouseLeftRelease:
 			updateMouse(event.Y, event.X)

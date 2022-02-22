@@ -1,9 +1,5 @@
 package hexes
 
-import (
-	"strconv"
-)
-
 type Attribute []byte
 
 func Join(attributes... Attribute) Attribute {
@@ -52,12 +48,32 @@ var (
 	BG_WHITE   = Attribute("\033[47m")
 )
 
+func byteToAscii(dest []byte, num byte) {
+	dest[0] = (num / 100) + '0'
+	dest[1] = ((num % 100) / 10) + '0'
+	dest[2] = (num % 10) + '0'
+}
+
 func TrueColor(red, green, blue int) Attribute {
-	return Attribute("\033[38;2;" + strconv.Itoa(red) + ";" + strconv.Itoa(green) + ";" + strconv.Itoa(blue) + "m")
+	//                 0    1    2    3    4    5    6   7  8  9  10   11 12 13  14  15 16 17  18
+	//                Esc                                   RED         GREEN         BLUE
+	sequence := []byte{27, '[', '3', '8', ';', '2', ';', 0, 0, 0, ';', 0, 0, 0, ';', 0, 0, 0, 'm'}
+	byteToAscii(sequence[7:], byte(red))
+	byteToAscii(sequence[11:], byte(green))
+	byteToAscii(sequence[15:], byte(blue))
+
+	return sequence
 	// return fmt.Sprintf("\033[38;2;%v;%v;%vm", red, green, blue) // This version is way slower
 }
 
 func TrueColorBg(red, green, blue int) Attribute {
-	return Attribute("\033[48;2;" + strconv.Itoa(red) + ";" + strconv.Itoa(green) + ";" + strconv.Itoa(blue) + "m")
+	//                 0    1    2    3    4    5    6   7  8  9  10   11 12 13  14  15 16 17  18
+	//                Esc                                   RED         GREEN         BLUE
+	sequence := []byte{27, '[', '4', '8', ';', '2', ';', 0, 0, 0, ';', 0, 0, 0, ';', 0, 0, 0, 'm'}
+	byteToAscii(sequence[7:], byte(red))
+	byteToAscii(sequence[11:], byte(green))
+	byteToAscii(sequence[15:], byte(blue))
+
+	return sequence
 	// return fmt.Sprintf("\033[48;2;%v;%v;%vm", red, green, blue)
 }
