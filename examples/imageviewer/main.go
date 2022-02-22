@@ -99,7 +99,7 @@ func main() {
 				r /= 256; g /= 256; b /= 256
 
 				renderer.SetAttribute(hexes.TrueColorBg(int(r), int(g), int(b)))
-				renderer.Set(y, x, " ")
+				renderer.Set(y, x, ' ')
 			}
 		}
 		out.Flush()

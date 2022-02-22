@@ -161,20 +161,24 @@ func spawnFruit() {
 	os.Exit(0)
 }
 
+var fruitAttr = hexes.Join(hexes.NORMAL, hexes.BOLD, hexes.RED)
+var emptyAttr = hexes.NORMAL
+var snakeAttr = hexes.Join(hexes.NORMAL, hexes.REVERSE)
+
 func renderGrid() {
 	for y, row := range grid {
 		for x, cell := range row {
 			switch(cell) {
 			case EMPTY:
-				renderer.SetAttribute(renderer.DefaultAttribute)
+				renderer.SetAttribute(emptyAttr)
 				renderer.SetString(y, x*2, "  ")
 				break
 			case SNAKE:
-				renderer.SetAttribute(hexes.REVERSE)
+				renderer.SetAttribute(snakeAttr)
 				renderer.SetString(y, x*2, "  ")
 				break
 			case FRUIT:
-				renderer.SetAttribute(hexes.BOLD + hexes.RED)
+				renderer.SetAttribute(fruitAttr)
 				renderer.SetString(y, x*2, "()")
 				break
 			}

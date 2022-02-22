@@ -5,19 +5,20 @@ import (
 	"io"
 	"os/exec"
 	"strconv"
+	"unicode/utf8"
 
 	runeWidth "github.com/mattn/go-runewidth"
 )
 
 type Renderer struct {
-	Lines            [][]string
-	Attributes       [][]string
+	Lines            [][]rune
+	Attributes       [][]Attribute
 	Rows             int
 	Cols             int
 	CursorRow        int
 	CursorCol        int
-	CurrentAttribute string
-	DefaultAttribute string
+	CurrentAttribute Attribute
+	DefaultAttribute Attribute
 	Out              io.Writer
 	In               io.Reader
 	onEnd            func(*Renderer)
@@ -42,14 +43,14 @@ func (r *Renderer) Start() {
 	command.Stdout = r.Out
 	command.Run()
 
-	r.print("\033[?25l") // Hide cursor
+	r.write([]byte("\033[?25l")) // Hide cursor
 	r.updateRowsAndCols()
 
 	for i := 0; i < r.Rows; i++ {
-		line := []string{}
-		attributes := []string{}
+		line := []rune{}
+		attributes := []Attribute{}
 		for j := 0; j < r.Cols; j++ {
-			line = append(line, " ")
+			line = append(line, ' ')
 			attributes = append(attributes, r.DefaultAttribute)
 		}
 		r.Lines = append(r.Lines, line)
@@ -82,7 +83,7 @@ func (r *Renderer) resizeLinesAndAttributes() {
 	} else if newCols > currentCols {
 		for i := 0; i < currentRows; i++ {
 			for j := 0; j < newCols - currentCols; j++ {
-				r.Lines[i] = append(r.Lines[i], " ")
+				r.Lines[i] = append(r.Lines[i], ' ')
 				r.Attributes[i] = append(r.Attributes[i], r.DefaultAttribute)
 			}
 		}
@@ -93,10 +94,10 @@ func (r *Renderer) resizeLinesAndAttributes() {
 		r.Attributes = r.Attributes[:newRows]
 	} else if newRows > currentRows {
 		for i := 0; i < newCols - currentRows; i++ {
-			row := []string{}
-			attributes := []string{}
+			row := []rune{}
+			attributes := []Attribute{}
 			for j := 0; j < newCols; j++ {
-				row = append(row, " ")
+				row = append(row, ' ')
 				attributes = append(attributes, r.DefaultAttribute)
 			}
 			r.Lines = append(r.Lines, row)
@@ -105,8 +106,14 @@ func (r *Renderer) resizeLinesAndAttributes() {
 	}
 }
 
-func (r *Renderer) print(str string) {
-	r.Out.Write([]byte(str))
+func (r *Renderer) write(data []byte) {
+	r.Out.Write(data)
+}
+
+var tmpBuf = make([]byte, 4)
+func (r *Renderer) writeRune(chr rune) {
+	length := utf8.EncodeRune(tmpBuf, chr)
+	r.Out.Write(tmpBuf[:length])
 }
 
 // Turn into refresh
@@ -115,10 +122,10 @@ func (r *Renderer) Refresh() {
 	r.resizeLinesAndAttributes()
 	r.SetAttribute(r.DefaultAttribute)
 
-	r.print("\033[H") // Move to top left corner
+	r.write([]byte("\033[H")) // Move to top left corner
 	r.CursorCol = 0
 	r.CursorRow = 0
-	r.print("\033[J") // Clear to end of screen
+	r.write([]byte("\033[J")) // Clear to end of screen
 
 	r.redraw()
 }
@@ -127,8 +134,8 @@ func (r *Renderer) redraw() {
 	for row := 0; row < r.Rows; row++ {
 		for col := 0; col < r.Cols; col++ {
 			r.MoveCursor(row, col)
-			r.print(r.Attributes[row][col])
-			r.print(r.Lines[row][col])
+			r.write(r.Attributes[row][col])
+			r.writeRune(r.Lines[row][col])
 			r.CursorCol++
 		}
 	}
@@ -142,7 +149,7 @@ func (r *Renderer) MoveCursor(row, col int) {
 	}
 	r.CursorRow = row
 	r.CursorCol = col
-	r.print(fmt.Sprintf("\033[%v;%vH", row + 1, col + 1))
+	fmt.Fprintf(r.Out, "\033[%v;%vH", row + 1, col + 1)
 }
 
 func (r *Renderer) End() {
@@ -154,57 +161,60 @@ func (r *Renderer) End() {
 	command.Stdout = r.Out
 	command.Run()
 
-	r.print("\033[?25h") // Show cursor
-	r.print(NORMAL)
-	r.print("\033[H") // Move to top left corner
-	r.print("\033[J") // Clear to end
+	r.write([]byte("\033[?25h")) // Show cursor
+	r.write(NORMAL)
+	r.write([]byte("\033[H")) // Move to top left corner
+	r.write([]byte("\033[J")) // Clear to end
 
 	if (r.onEnd != nil)  {
 		r.onEnd(r)
 	}
 }
 
-func (r *Renderer) Set(row, col int, value string) {
-	if (row > r.Rows - 1 || col > r.Cols - 1 || (r.Lines[row][col] == value && r.Attributes[row][col] == r.CurrentAttribute)) {
-		return
+func (r *Renderer) Set(row, col int, value rune) {
+	if (
+		row > r.Rows - 1 ||
+		col > r.Cols - 1 ||
+		(r.Lines[row][col] == value && &r.Attributes[row][col][0] == &r.CurrentAttribute[0])) {
+			return
 	}
 	var oldWidth int
-	width := runeWidth.RuneWidth([]rune(value)[0])
+	width := runeWidth.RuneWidth(value)
 	if width == 2 {
-		oldWidth = runeWidth.RuneWidth([]rune(r.Lines[row][col])[0])
+		oldWidth = runeWidth.RuneWidth(r.Lines[row][col])
 	}
 
 	r.MoveCursor(row, col)
 	r.Lines[row][col] = value
 	r.Attributes[row][col] = r.CurrentAttribute
-	r.print(value)
+	r.writeRune(value)
 	r.CursorCol += width
 
 	if width < oldWidth && col < r.Cols - 1 {
 		r.MoveCursor(row, col+1)
 		r.SetAttribute(r.Attributes[row][col+1])
-		r.print(r.Lines[row][col+1])
+		r.writeRune(r.Lines[row][col+1])
 	}
 }
 
 func (r *Renderer) SetString(row, col int, value string) {
 	for _, chr := range value {
-		r.Set(row, col, string(chr))
+		r.Set(row, col, chr)
 		col += runeWidth.RuneWidth(chr)
 	}
 }
 
-func (r *Renderer) SetAttribute(attribute string) {
-	if attribute == r.DefaultAttribute {
-		r.CurrentAttribute = r.DefaultAttribute
-	} else {
-		r.CurrentAttribute = r.DefaultAttribute + attribute
-	}
-	r.print(r.CurrentAttribute)
+func (r *Renderer) SetAttribute(attribute Attribute) {
+	r.CurrentAttribute = attribute
+	r.write(r.CurrentAttribute)
 }
 
-func (r *Renderer) SetDefaultAttribute(attribute string) {
+func (r *Renderer) SetDefaultAttribute(attribute Attribute) {
 	r.DefaultAttribute = attribute
+}
+
+func (r *Renderer) NewAttribute(attributes... Attribute) Attribute {
+	return Join(r.DefaultAttribute, Join(attributes...))
 }
 
 func (r *Renderer) OnEnd(f func(r *Renderer)) {
