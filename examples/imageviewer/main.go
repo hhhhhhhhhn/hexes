@@ -15,6 +15,7 @@ import (
 
 var quit = false
 var render = true
+var refresh = false
 
 func main() {
 	img, err := loadImage()
@@ -35,7 +36,7 @@ func main() {
 	})
 	renderer.Start()
 
-	imageWidth  := bounds.Max.X - bounds.Min.X
+	imageWidth   := bounds.Max.X - bounds.Min.X
 	imageHeight  := bounds.Max.Y - bounds.Min.Y
 	yOffset      := -bounds.Min.Y + imageHeight * 50
 	xOffset      := -bounds.Min.X + imageWidth * 50
@@ -84,7 +85,12 @@ func main() {
 				}
 				break
 			case input.KeyPressed:
-				quit = true
+				switch event.Chr {
+				case 'q':
+					quit = true
+				case 'r':
+					refresh = true
+				}
 				break
 			}
 		}
@@ -95,12 +101,17 @@ func main() {
 			renderer.End()
 			os.Exit(0)
 		}
+		if refresh {
+			refresh = false
+			render = true
+			renderer.Refresh()
+		}
 		if render {
 			render = false
 			for y := 0; y < renderer.Rows; y++ {
 				for x := 0; x < renderer.Cols; x++ {
-					imageX := ((x - renderer.Cols / 2) * imageHeight * 2 * scale / renderer.Cols / 1000 + xOffset / 100)
-					imageY := ((y - renderer.Rows / 2) * imageHeight * scale / renderer.Rows / 1000 + yOffset / 100)
+					imageX := ((x - renderer.Cols / 2) * imageHeight * scale / 2 / renderer.Rows / 1000 + (xOffset / 100))
+					imageY := ((y - renderer.Rows / 2) * imageHeight * scale / renderer.Rows / 1000 + (yOffset / 100))
 
 					r, g, b, _ := img.At(imageX, imageY).RGBA()
 					r /= 256; g /= 256; b /= 256
