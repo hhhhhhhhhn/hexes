@@ -35,9 +35,6 @@ func main() {
 	out = bufio.NewWriterSize(os.Stdin, 4096)
 	renderer = hexes.New(os.Stdin, out)
 	renderer.Start()
-	renderer.OnEnd(func(*hexes.Renderer){
-		out.Flush()
-	})
 	grid = createGrid(renderer.Rows, renderer.Cols / 2)
 
 	grid[2][3] = FRUIT
@@ -97,6 +94,7 @@ func handleInput() {
 			break
 		case 'q':
 			renderer.End()
+			out.Flush()
 			os.Exit(0)
 			break
 		}
@@ -141,6 +139,7 @@ func moveSnake() {
 		snake = snake[1:]
 	case SNAKE:
 		renderer.End()
+		out.Flush()
 		os.Exit(0)
 	}
 
@@ -158,6 +157,7 @@ func spawnFruit() {
 		}
 	}
 	renderer.End()
+	out.Flush()
 	os.Exit(0)
 }
 

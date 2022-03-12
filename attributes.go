@@ -1,7 +1,10 @@
 package hexes
 
+// Type representing the style of the text being written (e.g. color, font weight).
+// Internally, just command sequences (a.k.a. ANSI escape codes).
 type Attribute []byte
 
+// Create an attribute joining the given.
 func Join(attributes... Attribute) Attribute {
 	size := len(attributes)
 	for _, attribute := range attributes {
@@ -54,6 +57,7 @@ func byteToAscii(dest []byte, num byte) {
 	dest[2] = (num % 10) + '0'
 }
 
+// Creates an attribute that sets the foreground to the RGB value.
 func TrueColor(red, green, blue int) Attribute {
 	//                 0    1    2    3    4    5    6   7  8  9  10   11 12 13  14  15 16 17  18
 	//                Esc                                   RED         GREEN         BLUE
@@ -66,6 +70,7 @@ func TrueColor(red, green, blue int) Attribute {
 	// return fmt.Sprintf("\033[38;2;%v;%v;%vm", red, green, blue) // This version is way slower
 }
 
+// Creates an attribute that sets the background to the RGB value.
 func TrueColorBg(red, green, blue int) Attribute {
 	//                 0    1    2    3    4    5    6   7  8  9  10   11 12 13  14  15 16 17  18
 	//                Esc                                   RED         GREEN         BLUE

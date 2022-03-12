@@ -30,10 +30,6 @@ func main() {
 	listener.EnableMouseTracking(out)
 	out.Flush()
 	renderer := hexes.New(os.Stdin, out)
-	renderer.OnEnd(func(*hexes.Renderer) {
-		listener.DisableMouseTracking(out)
-		out.Flush()
-	})
 	renderer.Start()
 
 	imageWidth   := bounds.Max.X - bounds.Min.X
@@ -99,6 +95,8 @@ func main() {
 	for {
 		if quit {
 			renderer.End()
+			listener.DisableMouseTracking(out)
+			out.Flush()
 			os.Exit(0)
 		}
 		if refresh {

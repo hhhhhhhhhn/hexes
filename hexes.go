@@ -10,20 +10,22 @@ import (
 	runeWidth "github.com/mattn/go-runewidth"
 )
 
+// Gives an abstraction to render text in any position in the terminal.
 type Renderer struct {
-	Lines            [][]rune
-	Attributes       [][]Attribute
-	Rows             int
-	Cols             int
-	CursorRow        int
-	CursorCol        int
-	CurrentAttribute Attribute
-	DefaultAttribute Attribute
-	Out              io.Writer
-	In               io.Reader
-	onEnd            func(*Renderer)
+	Lines            [][]rune      // (RO) The virtual output characters.
+	Attributes       [][]Attribute // (RO) The virtual output Attributes.
+	Rows             int           // (RO) The amount of rows in virtual output.
+	Cols             int           // (RO) The amount of columns in virtual output.
+	CursorRow        int           // (RO) The row the cursor is in the terminal.
+	CursorCol        int           // (RO) The column the cursor is in the terminal.
+	CurrentAttribute Attribute     // (RO) The terminal's current attribute.
+	DefaultAttribute Attribute     // (RO) The preferred default attribute of the renderer.
+	Out              io.Writer     // (RO) The default writer to send terminal data to.
+	In               io.Reader     // (RO) The default reader to get data from.
 }
 
+// Creates a new Renderer using in (e.g. os.Stdin) as input and
+// out (e.g. os.Stdout) as output.
 func New(in io.Reader, out io.Writer) *Renderer {
 	return &Renderer{DefaultAttribute: NORMAL, Out: out, In: in}
 }
@@ -34,6 +36,7 @@ func (r *Renderer) commandWithStdin(name string, arg ...string) *exec.Cmd {
 	return command
 }
 
+// Initializes and configures the Renderer and user's terminal.
 func (r *Renderer) Start() {
 	command := r.commandWithStdin("stty", "-icanon", "-echo")
 	command.Stdout = r.Out
@@ -116,7 +119,7 @@ func (r *Renderer) writeRune(chr rune) {
 	r.Out.Write(tmpBuf[:length])
 }
 
-// Turn into refresh
+// Redraws virtual output to the terminal, handling resizes.
 func (r *Renderer) Refresh() {
 	r.updateRowsAndCols()
 	r.resizeLinesAndAttributes()
@@ -141,6 +144,7 @@ func (r *Renderer) redraw() {
 	}
 }
 
+// Moves terminal cursor to a position (0 indexed).
 func (r *Renderer) MoveCursor(row, col int) {
 	// NOTE: This optimization doesn't always work, as some unicode characters
 	// are 2 wide even if using the 'width' package to narrow them
@@ -152,25 +156,7 @@ func (r *Renderer) MoveCursor(row, col int) {
 	fmt.Fprintf(r.Out, "\033[%v;%vH", row + 1, col + 1)
 }
 
-func (r *Renderer) End() {
-	command := r.commandWithStdin("stty", "sane")
-	command.Stdout = r.Out
-	command.Run()
-
-	command = r.commandWithStdin("tput", "smam")
-	command.Stdout = r.Out
-	command.Run()
-
-	r.write([]byte("\033[?25h")) // Show cursor
-	r.write(NORMAL)
-	r.write([]byte("\033[H")) // Move to top left corner
-	r.write([]byte("\033[J")) // Clear to end
-
-	if (r.onEnd != nil)  {
-		r.onEnd(r)
-	}
-}
-
+// Sets the cell at row, col (0 indexed) to the character given.
 func (r *Renderer) Set(row, col int, value rune) {
 	if (
 		row > r.Rows - 1 ||
@@ -197,6 +183,8 @@ func (r *Renderer) Set(row, col int, value rune) {
 	}
 }
 
+// Sets the cells starting at row, col (0 indexed) to value,
+// accounting for wide characters.
 func (r *Renderer) SetString(row, col int, value string) {
 	for _, chr := range value {
 		r.Set(row, col, chr)
@@ -204,19 +192,35 @@ func (r *Renderer) SetString(row, col int, value string) {
 	}
 }
 
+// Sets the Attribute of the text being written.
 func (r *Renderer) SetAttribute(attribute Attribute) {
 	r.CurrentAttribute = attribute
 	r.write(r.CurrentAttribute)
 }
 
+// Sets the preferred Attribute with which to prepend new ones.
 func (r *Renderer) SetDefaultAttribute(attribute Attribute) {
 	r.DefaultAttribute = attribute
 }
 
+// Creates a new attribute based on the default attribute.
 func (r *Renderer) NewAttribute(attributes... Attribute) Attribute {
 	return Join(r.DefaultAttribute, Join(attributes...))
 }
 
-func (r *Renderer) OnEnd(f func(r *Renderer)) {
-	r.onEnd = f
+// Restores terminal to default state.
+func (r *Renderer) End() {
+	command := r.commandWithStdin("stty", "sane")
+	command.Stdout = r.Out
+	command.Run()
+
+	command = r.commandWithStdin("tput", "smam")
+	command.Stdout = r.Out
+	command.Run()
+
+	r.write([]byte("\033[?25h")) // Show cursor
+	r.write(NORMAL)
+	r.write([]byte("\033[H")) // Move to top left corner
+	r.write([]byte("\033[J")) // Clear to end
 }
+

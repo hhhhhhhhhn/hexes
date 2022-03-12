@@ -36,10 +36,6 @@ func main() {
 
 	out.Flush()
 
-	renderer.OnEnd(func(*hexes.Renderer){
-		listener.DisableMouseTracking(out)
-		out.Flush()
-	})
 	grid = createGrid(renderer.Rows, renderer.Cols / 2)
 
 	go handleInput()
@@ -49,6 +45,8 @@ func main() {
 	for {
 		if quit {
 			renderer.End()
+			listener.DisableMouseTracking(out)
+			out.Flush()
 			os.Exit(0)
 			return
 		}

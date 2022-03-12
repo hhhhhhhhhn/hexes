@@ -20,11 +20,6 @@ func main() {
 	out.Flush()
 
 	renderer.Start()
-	renderer.OnEnd(func(*hexes.Renderer){
-		listener.DisableMouseTracking(out)
-		out.Flush()
-	})
-
 
 	for {
 		event := listener.GetEvent()
@@ -38,6 +33,8 @@ func main() {
 			out.Flush()
 			if event.Chr == 'q'{
 				renderer.End()
+				listener.DisableMouseTracking(out)
+				out.Flush()
 				return
 			}
 			break

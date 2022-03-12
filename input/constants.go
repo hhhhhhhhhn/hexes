@@ -30,10 +30,10 @@ const (
 	KEY_F12       rune = -23
 )
 
-type eventType int
+type EventType int
 
 const (
-	KeyPressed eventType = iota
+	KeyPressed EventType = iota
 	MouseMove
 	MouseLeftClick
 	MouseLeftRelease

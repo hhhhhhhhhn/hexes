@@ -20,11 +20,6 @@ func main() {
 	r.SetDefaultAttribute(hexes.Join(hexes.NORMAL, hexes.BG_WHITE, hexes.GREEN))
 	r.Start()
 
-	// Makes sure reset signals are sent
-	r.OnEnd(func (*hexes.Renderer) {
-		out.Flush()
-	})
-
 	colors := [][]hexes.Attribute{}
 	for row := 0; row < r.Rows; row++ {
 		arr := []hexes.Attribute{}
@@ -44,6 +39,7 @@ func main() {
 		out.Flush()
 	}
 	r.End()
+	out.Flush()
 
 	pprof.StopCPUProfile()
 }

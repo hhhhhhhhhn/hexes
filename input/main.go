@@ -8,11 +8,13 @@ import (
 	"time"
 )
 
+// Allows to listen for Events given by the user, like keypresses.
 type Listener struct {
 	inChannel chan rune
 	in        *bufio.Reader
 }
 
+// Creates a new Listener from the given reader (e.g. os.Stdin)
 func New(in io.Reader) *Listener {
 	listener := &Listener{inChannel: make(chan rune)}
 	listener.in = bufio.NewReader(in)
@@ -29,21 +31,29 @@ func New(in io.Reader) *Listener {
 	return listener
 }
 
+// Enables the listener to listen to mouse events.
+// Don't forget to DisableMouseTracking when finished, or the terminal
+// will be broken afterwards.
 func (l *Listener) EnableMouseTracking(out io.Writer) {
 	out.Write([]byte("\033[?1003;1006;1015h"))
 }
 
+// Ends the support for mouse events, necessary before exiting the program.
 func (l *Listener) DisableMouseTracking(out io.Writer) {
 	out.Write([]byte("\033[?1003;1006;1015l"))
 }
 
+// Represents an event.
+// KeyPressed events have the Chr populated with the pressed key,
+// while mouse events use the X and Y field to show the location (0 indexed).
 type Event struct {
-	EventType eventType
+	EventType EventType
 	Chr rune
 	X   int
 	Y   int
 }
 
+// Blockingly waits for an event
 func (l *Listener) GetEvent() *Event {
 	chr := <- l.inChannel
 
