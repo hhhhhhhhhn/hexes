@@ -111,14 +111,8 @@ func handleInput() {
 }
 
 func updateMouse(row, col int) {
-	mouseX = col / 2
-	if mouseX == len(grid[0]) {
-		mouseX--
-	}
-	mouseY = row
-	if mouseY == len(grid) {
-		mouseY--
-	}
+	mouseX = (col / 2) % len(grid[0])
+	mouseY = row % len(grid)
 }
 
 func mod(a, b int) int {
