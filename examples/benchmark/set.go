@@ -4,12 +4,13 @@ import (
 	"os"
 	"bufio"
 	"runtime/pprof"
+	"unicode"
 
 	"github.com/hhhhhhhhhn/hexes"
 )
 
-func colors() {
-	cpuProf, _ := os.Create("cpuprofile")
+func set() {
+	cpuProf, _ := os.Create("setprofile")
 	defer cpuProf.Close()
 	pprof.StartCPUProfile(cpuProf)
 
@@ -20,20 +21,15 @@ func colors() {
 	r.SetDefaultAttribute(hexes.Join(hexes.NORMAL, hexes.BG_WHITE, hexes.GREEN))
 	r.Start()
 
-	colors := [][]hexes.Attribute{}
-	for row := 0; row < r.Rows; row++ {
-		arr := []hexes.Attribute{}
-		for col := 0; col < r.Cols; col++ {
-			arr = append(arr, hexes.TrueColorBg(row * 255 / r.Rows, col * 255 / r.Cols, 0))
-		}
-		colors = append(colors, arr)
-	}
-
+	var j rune
 	for i := 0; i < 50 * r.Rows; i++ {
+		j++
+		for !unicode.IsGraphic(j) {
+			j++
+		}
 		for row := 0; row < r.Rows; row++ {
 			for col := 0; col < r.Cols; col++ {
-				r.SetAttribute(colors[(row+i) % r.Rows][(col+i) % r.Cols])
-				r.Set(row, col, ' ')
+				r.Set(row, col, j)
 			}
 		}
 		out.Flush()
@@ -42,9 +38,4 @@ func colors() {
 	out.Flush()
 
 	pprof.StopCPUProfile()
-}
-
-func main() {
-	set()
-	colors()
 }
