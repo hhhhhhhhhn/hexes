@@ -1,7 +1,6 @@
 package hexes
 
 import (
-	"fmt"
 	"io"
 	"os/exec"
 	"strconv"
@@ -153,7 +152,19 @@ func (r *Renderer) MoveCursor(row, col int) {
 	}
 	r.CursorRow = row
 	r.CursorCol = col
-	fmt.Fprintf(r.Out, "\033[%v;%vH", row + 1, col + 1)
+	r.moveTerminalCursor(row + 1, col + 1)
+}
+
+var baseSequence = []byte{27, '[', 0, 0, 0, ';', 0, 0, 0, 'H'}
+var tmpSequence  = []byte{27, '[', 0, 0, 0, ';', 0, 0, 0, 'H'}
+
+func (r *Renderer) moveTerminalCursor(row, col int) {
+	//                 0    1   2  3  4   5   6  7  8   9
+	//                ESC         ROW           COL
+	copy(tmpSequence, baseSequence)
+	byteToAscii(tmpSequence[2:], byte(row))
+	byteToAscii(tmpSequence[6:], byte(col))
+	r.write(tmpSequence)
 }
 
 // Sets the cell at row, col (0 indexed) to the character given.
