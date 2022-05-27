@@ -4,7 +4,7 @@ A simple curses alternative written in go.
 For now, it requires `stty` and `tput` to work.
 Test the [examples](./examples/)!
 
-![Snake in hexes](./examples/snake/screengrab.gif)
+![Game of Life in hexes](./examples/gol/screengrab.gif)
 
 ## Usage
 
@@ -55,3 +55,7 @@ func main() {
 	r.End()
 }
 ```
+
+## Examples
+![Image viewer in hexes](./examples/imageviewer/screengrab.gif)
+![Snake in hexes](./examples/snake/screengrab.gif)
