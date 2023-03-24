@@ -109,13 +109,20 @@ func main() {
 			for y := 0; y < renderer.Rows; y++ {
 				for x := 0; x < renderer.Cols; x++ {
 					imageX := ((x - renderer.Cols / 2) * imageHeight * scale / 2 / renderer.Rows / 1000 + (xOffset / 100))
-					imageY := ((y - renderer.Rows / 2) * imageHeight * scale / renderer.Rows / 1000 + (yOffset / 100))
+					imageTopY := ((y - renderer.Rows / 2) * imageHeight * scale / renderer.Rows / 1000 + (yOffset / 100))
+					imageBottomY := (((y - renderer.Rows / 2) * imageHeight * scale + imageHeight*scale/2) / renderer.Rows / 1000 + (yOffset / 100))
 
-					r, g, b, _ := img.At(imageX, imageY).RGBA()
-					r /= 256; g /= 256; b /= 256
+					tr, tg, tb, _ := img.At(imageX, imageTopY).RGBA()
+					tr /= 256; tg /= 256; tb /= 256
+					br, bg, bb, _ := img.At(imageX, imageBottomY).RGBA()
+					br /= 256; bg /= 256; bb /= 256
 
-					renderer.SetAttribute(hexes.TrueColorBg(int(r), int(g), int(b)))
-					renderer.Set(y, x, ' ')
+					attribute := hexes.Join(
+						hexes.TrueColor(int(tr), int(tg), int(tb)),
+						hexes.TrueColorBg(int(br), int(bg), int(bb)),
+					)
+					renderer.SetAttribute(attribute)
+					renderer.Set(y, x, '▀')
 				}
 			}
 			out.Flush()
